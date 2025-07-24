@@ -12,11 +12,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="exam-data.js" defer></script>
     <script src="script.js" defer></script>
-<style>
-        body { font-family: 'Inter', sans-serif; }
-        .tab-active { border-bottom: 2px solid #3B82F6; color: #3B82F6; font-weight: 600; }
-        .exam-panel { display: none; }
-        .exam-panel.active { display: block; }
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tab-active {
+            border-bottom: 2px solid #3B82F6;
+            color: #3B82F6;
+            font-weight: 600;
+        }
+
+        .exam-panel {
+            display: none;
+        }
+
+        .exam-panel.active {
+            display: block;
+        }
+
         .ai-feedback-pre {
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -28,55 +42,64 @@
             line-height: 1.6;
         }
 
-        /* --- UPDATED ACCORDION STYLES --- */
+        /* --- FINAL ACCORDION STYLES --- */
+        .accordion-item > button::before {
+            display: none !important;
+            content: "" !important;
+        }
         .accordion-header {
-            background-color: #f3f4f6; /* bg-gray-100 */
-            color: #1f2937; /* text-gray-800 */
+            background-color: #f3f4f6;
+            color: #1f2937;
             cursor: pointer;
-            padding: 1rem; /* p-4 */
+            padding: 1rem;
             width: 100%;
             border: none;
             text-align: left;
             outline: none;
-            font-size: 1.125rem; /* text-lg */
-            font-weight: 600; /* font-semibold */
+            font-size: 1.125rem;
+            font-weight: 600;
             transition: background-color 0.3s ease;
-            border-radius: 0.5rem; /* rounded-lg */
+            border-radius: 0.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .accordion-header:hover, .accordion-header.active {
-            background-color: #e5e7eb; /* bg-gray-200 */
+        .accordion-header:hover,
+        .accordion-header.active {
+            background-color: #e5e7eb;
         }
-        
-        /* This is the new '+' icon for the closed state */
+
+        /* This is the CLOSED BOOK emoji for the default state */
         .accordion-header::after {
             content: '📖';
-            font-size: 1.5rem; /* Made slightly larger for visibility */
-            color: #6b7280; /* text-gray-500 */
-            font-weight: bold;
+            font-size: 1.5rem;
             transition: transform 0.3s ease;
         }
 
-        /* This is the new '–' icon for the open/active state */
+        /* This is the OPEN BOOK emoji for the active/open state */
         .accordion-header.active::after {
-            content: '📖'; /* This is the code for a clean '–' dash */
-            transform: rotate(180deg); /* We rotate the dash to prevent a jumpy effect */
+            content: '📙';
+            transform: rotate(0deg);
         }
 
+        /* This rule defines the CLOSED state of the content */
         .accordion-content {
-            padding: 0 1rem; /* Changed initial padding */
+            padding: 0 1rem;
             background-color: white;
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out, padding 0.3s ease-in-out;
+            transition: max-height 0.3s ease-out, padding 0.2s ease-out;
             border-left: 1px solid #e5e7eb;
             border-right: 1px solid #e5e7eb;
             border-bottom: 1px solid #e5e7eb;
             border-bottom-left-radius: 0.5rem;
             border-bottom-right-radius: 0.5rem;
+        }
+
+        /* This rule defines the OPEN state of the content */
+        .accordion-header.active+.accordion-content {
+            padding: 1rem;
         }
     </style>
 </head>

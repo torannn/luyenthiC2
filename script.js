@@ -34,18 +34,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- NEW FUNCTION to make the accordion work ---
+    // --- FINAL, ROBUST ACCORDION FUNCTION ---
     function initializeAccordions() {
-        const headers = document.querySelectorAll('.accordion-header');
-        headers.forEach(header => {
+        const accordions = document.querySelectorAll('.accordion-item');
+
+        accordions.forEach(item => {
+            const header = item.querySelector('.accordion-header');
+            const content = item.querySelector('.accordion-content');
+
             header.addEventListener('click', () => {
+                // Toggle the active class on the header for styling (e.g., emoji change)
                 header.classList.toggle('active');
-                const content = header.nextElementSibling;
+
+                // Check if the content is currently open (maxHeight is not 0 or null)
                 if (content.style.maxHeight) {
+                    // If open, close it
                     content.style.maxHeight = null;
-                    content.style.padding = "0 1rem 1rem 1rem"; // keep padding on collapse start
                 } else {
-                    content.style.padding = "1rem"; // add padding on expand
+                    // If closed, open it by setting maxHeight to its full scrollable height
                     content.style.maxHeight = content.scrollHeight + "px";
                 }
             });
@@ -204,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return; // This stops the function from continuing
         }
         clearInterval(timerInterval);
-        
+
 
         // 1. Switch to the results screen and show loading messages in the new containers
         examScreen.classList.add('hidden');
