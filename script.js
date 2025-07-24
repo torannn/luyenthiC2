@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 // Put the final report into its container
                 document.getElementById('final-report-content').innerHTML = data.report;
-                initializeAccordions(); 
+                initializeAccordions();
             } catch (error) {
                 console.error("Report Generation Error:", error);
                 document.getElementById('final-report-content').innerHTML = `<p class="text-red-500">Could not generate the final performance report.</p>`;
