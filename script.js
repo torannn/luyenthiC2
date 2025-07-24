@@ -199,7 +199,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- FINAL VERSION: This function processes all results and generates the final report ---
     examForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!finalWritingFeedback) {
+            alert("Please get AI feedback for your writing task before submitting the exam.");
+            return; // This stops the function from continuing
+        }
         clearInterval(timerInterval);
+        
 
         // 1. Switch to the results screen and show loading messages in the new containers
         examScreen.classList.add('hidden');
