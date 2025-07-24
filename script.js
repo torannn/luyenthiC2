@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wcPart1 = document.getElementById('wc-part1');
     const restartBtn = document.getElementById('restart-btn');
     const examTitleHeader = document.getElementById('exam-title-header');
-    
+
     let timerInterval;
     let finalWritingFeedback = '';
     let currentExam;
@@ -31,6 +31,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadExam(exam.id);
             });
             examMenu.appendChild(button);
+        });
+    }
+
+    // --- NEW FUNCTION to make the accordion work ---
+    function initializeAccordions() {
+        const headers = document.querySelectorAll('.accordion-header');
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                header.classList.toggle('active');
+                const content = header.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                    content.style.padding = "0 1rem 1rem 1rem"; // keep padding on collapse start
+                } else {
+                    content.style.padding = "1rem"; // add padding on expand
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
         });
     }
 
@@ -53,10 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="mb-4 text-gray-600">${readingInfo.instructions}</p>
                 <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-6">
                     <h4 class="text-lg font-semibold mb-2">${readingInfo.text_title}</h4>
-                    <p class="text-gray-700 leading-relaxed">${readingInfo.text.replace(/\(\d+\)___/g, (match, p1) => `<strong>(${match.slice(1,2)})</strong> _____`)}</p>
+                    <p class="text-gray-700 leading-relaxed">${readingInfo.text.replace(/\(\d+\)___/g, (match, p1) => `<strong>(${match.slice(1, 2)})</strong> _____`)}</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">`;
-        
+
         // ======================================================
         // =========== THIS IS THE CORRECTED PART ===============
         // ======================================================
@@ -82,9 +100,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let writingPromptHTML = `
             <h3 class="text-xl font-semibold border-b-2 border-blue-200 pb-2 mb-4">Part 1: ${writingInfo.taskType.charAt(0).toUpperCase() + writingInfo.taskType.slice(1)}</h3>
             <p class="mb-4 text-gray-600">${writingInfo.instructions}</p>`;
-        
+
         if (writingInfo.prompt.text2_content) {
-             writingPromptHTML += `
+            writingPromptHTML += `
              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                <div class="writing-prompt bg-blue-50 p-6 rounded-lg border border-blue-200">
                    <h4 class="font-semibold mb-2">${writingInfo.prompt.text1_title}</h4>
@@ -103,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
         }
         writingContainer.innerHTML = writingPromptHTML;
-        
+
         aiFeedbackArea.innerHTML = '';
         writingPart1.value = '';
         wcPart1.textContent = 'Word count: 0';
@@ -137,12 +155,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 1000);
     }
-    
+
     writingPart1.addEventListener('input', () => {
         const words = writingPart1.value.trim().split(/\s+/).filter(Boolean);
         wcPart1.textContent = `Word count: ${words.length}`;
     });
 
+    // Find this function in your script.js
     getFeedbackBtn.addEventListener('click', async () => {
         const textToAnalyze = writingPart1.value;
         if (!textToAnalyze.trim()) {
@@ -156,15 +175,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('http://localhost:3000/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     essay: textToAnalyze,
-                    taskType: currentExam.writing.part1.taskType 
+                    taskType: currentExam.writing.part1.taskType
                 })
             });
             if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
             const data = await response.json();
             finalWritingFeedback = data.feedback;
-            aiFeedbackArea.innerHTML = `<pre class="ai-feedback-pre">${finalWritingFeedback}</pre>`;
+
+            // ** THE CHANGE IS HERE: No more <pre> tag. We render the AI's HTML directly. **
+            aiFeedbackArea.innerHTML = finalWritingFeedback;
+
         } catch (error) {
             console.error("Error:", error);
             aiFeedbackArea.innerHTML = `<p class="text-red-600">An error occurred. Please ensure the backend server is running.</p>`;
@@ -173,17 +195,20 @@ document.addEventListener('DOMContentLoaded', () => {
             getFeedbackBtn.textContent = 'Get AI Feedback';
         }
     });
-    
+
+    // --- FINAL VERSION: This function processes all results and generates the final report ---
     examForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearInterval(timerInterval);
-        
+
+        // 1. Switch to the results screen and show loading messages in the new containers
         examScreen.classList.add('hidden');
         resultsScreen.classList.remove('hidden');
         document.getElementById('reading-feedback-content').innerHTML = `<p>Grading your reading answers...</p>`;
-        document.getElementById('writing-feedback-content').innerHTML = `<p>Summarizing your writing feedback...</p>`;
+        document.getElementById('final-report-content').innerHTML = `<p>Generating your final report...</p>`;
         window.scrollTo(0, 0);
 
+        // 2. Process Reading Feedback
         const formData = new FormData(examForm);
         const userAnswers = {};
         for (const [key, value] of formData.entries()) {
@@ -192,43 +217,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const readingQuestions = currentExam.reading.part1.questions;
         let readingFeedbackHTML = '';
+        const readingResultsForAI = []; // This new array will be sent to the server
+
         readingQuestions.forEach(q => {
             const questionId = `q${q.q}`;
             const userAnswer = userAnswers[questionId];
             const isCorrect = userAnswer === q.answer;
-            
+
+            // A. Add the result to the array we'll send to the AI
+            readingResultsForAI.push({
+                question: q.q,
+                userAnswer: userAnswer || "No answer",
+                correctAnswer: q.answer,
+                isCorrect: isCorrect
+            });
+
+            // B. Build the HTML for display on the page
             const status = isCorrect ? 'Correct' : 'Incorrect';
             const statusColor = isCorrect ? 'text-green-600' : 'text-red-600';
-
             readingFeedbackHTML += `
-                <div class="p-4 rounded-lg border ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
-                    <p class="font-semibold"><strong class="${statusColor}">Question ${q.q}: ${status}</strong></p>
-                    <p class="text-sm mt-1">Your answer: <span class="font-medium">${userAnswer || 'No answer'}</span></p>
-                    ${!isCorrect ? `<p class="text-sm">Correct answer: <span class="font-medium">${q.answer}</span></p>` : ''}
-                    <div class="text-sm mt-2 pt-2 border-t border-gray-200">
-                        <strong class="text-gray-600">Rationale:</strong> ${q.explanation}
-                    </div>
+            <div class="p-4 rounded-lg border ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
+                <p class="font-semibold"><strong class="${statusColor}">Question ${q.q}: ${status}</strong></p>
+                <p class="text-sm mt-1">Your answer: <span class="font-medium">${userAnswer || 'No answer'}</span></p>
+                ${!isCorrect ? `<p class="text-sm">Correct answer: <span class="font-medium">${q.answer}</span></p>` : ''}
+                <div class="text-sm mt-2 pt-2 border-t border-gray-200">
+                    <strong class="text-gray-600">Rationale:</strong> ${q.explanation}
                 </div>
-            `;
+            </div>
+        `;
         });
         document.getElementById('reading-feedback-content').innerHTML = readingFeedbackHTML;
 
+        // 3. Generate and Display the Final Holistic Report
         if (finalWritingFeedback) {
             try {
-                const response = await fetch('http://localhost:3000/summarize', {
+                // Call the NEW /generate-report endpoint with both reading and writing data
+                const response = await fetch('http://localhost:3000/generate-report', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: finalWritingFeedback })
+                    body: JSON.stringify({
+                        readingResults: readingResultsForAI,
+                        writingFeedback: finalWritingFeedback
+                    })
                 });
-                if (!response.ok) throw new Error('Failed to get summary.');
+                if (!response.ok) throw new Error('Failed to get final report.');
+
                 const data = await response.json();
-                document.getElementById('writing-feedback-content').innerHTML = `<p class="text-gray-700 leading-relaxed">${data.summary}</p>`;
+                // Put the final report into its container
+                document.getElementById('final-report-content').innerHTML = data.report;
+                initializeAccordions(); 
             } catch (error) {
-                console.error("Summarization Error:", error);
-                document.getElementById('writing-feedback-content').innerHTML = `<p class="text-red-500">Could not generate writing summary. Displaying full feedback instead.</p><pre class="ai-feedback-pre">${finalWritingFeedback}</pre>`;
+                console.error("Report Generation Error:", error);
+                document.getElementById('final-report-content').innerHTML = `<p class="text-red-500">Could not generate the final performance report.</p>`;
             }
         } else {
-            document.getElementById('writing-feedback-content').innerHTML = `<p class="text-gray-600">No AI writing feedback was generated.</p>`;
+            document.getElementById('final-report-content').innerHTML = `<p class="text-gray-600">Complete the writing task and get feedback to generate a final report.</p>`;
         }
     });
 

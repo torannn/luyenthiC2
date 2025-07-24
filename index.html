@@ -12,25 +12,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="exam-data.js" defer></script>
     <script src="script.js" defer></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .tab-active {
-            border-bottom: 2px solid #3B82F6;
-            color: #3B82F6;
-            font-weight: 600;
-        }
-
-        .exam-panel {
-            display: none;
-        }
-
-        .exam-panel.active {
-            display: block;
-        }
-
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active { border-bottom: 2px solid #3B82F6; color: #3B82F6; font-weight: 600; }
+        .exam-panel { display: none; }
+        .exam-panel.active { display: block; }
         .ai-feedback-pre {
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -40,6 +26,57 @@
             border: 1px solid #e5e7eb;
             font-family: monospace;
             line-height: 1.6;
+        }
+
+        /* --- UPDATED ACCORDION STYLES --- */
+        .accordion-header {
+            background-color: #f3f4f6; /* bg-gray-100 */
+            color: #1f2937; /* text-gray-800 */
+            cursor: pointer;
+            padding: 1rem; /* p-4 */
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            transition: background-color 0.3s ease;
+            border-radius: 0.5rem; /* rounded-lg */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .accordion-header:hover, .accordion-header.active {
+            background-color: #e5e7eb; /* bg-gray-200 */
+        }
+        
+        /* This is the new '+' icon for the closed state */
+        .accordion-header::after {
+            content: '+';
+            font-size: 1.5rem; /* Made slightly larger for visibility */
+            color: #6b7280; /* text-gray-500 */
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+
+        /* This is the new '–' icon for the open/active state */
+        .accordion-header.active::after {
+            content: '\\2013'; /* This is the code for a clean '–' dash */
+            transform: rotate(180deg); /* We rotate the dash to prevent a jumpy effect */
+        }
+
+        .accordion-content {
+            padding: 0 1rem; /* Changed initial padding */
+            background-color: white;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-in-out;
+            border-left: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
         }
     </style>
 </head>
@@ -110,26 +147,17 @@
             <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                 <h1 class="text-3xl font-bold text-blue-600 mb-8 text-center">Performance Report</h1>
 
-                <!-- ====================================================== -->
-                <!-- ==  THIS IS THE NEW SECTION FOR READING FEEDBACK  ==== -->
-                <!-- ====================================================== -->
                 <div id="reading-feedback-container" class="mb-8">
                     <h3 class="text-2xl font-semibold text-gray-800 mb-4 border-b-2 border-blue-200 pb-3">Reading & Use
                         of English Feedback</h3>
                     <div id="reading-feedback-content" class="space-y-4">
-                        <!-- The script will fill this part with the detailed reading results -->
                     </div>
                 </div>
-                <!-- ====================================================== -->
-                <!-- ===========  END OF NEW READING SECTION  ============= -->
-                <!-- ====================================================== -->
 
-                <!-- This is your existing writing feedback section -->
-                <div id="final-writing-assessment" class="mb-8">
-                    <h3 class="text-2xl font-semibold text-gray-800 mb-4 border-b-2 border-blue-200 pb-3">Writing Task
-                        Summary</h3>
-                    <div id="writing-feedback-content" class="space-y-4">
-                        <!-- The script will fill this part with the writing summary -->
+                <div id="final-performance-report" class="mb-8">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4 border-b-2 border-blue-200 pb-3">Overall
+                        Performance Report & Suggestions</h3>
+                    <div id="final-report-content" class="space-y-4">
                     </div>
                 </div>
 

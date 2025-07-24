@@ -3,90 +3,51 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
-// Load environment variables from .env file
 dotenv.config();
-
 const app = express();
 const port = 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Initialize the Google AI client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Define the main endpoint for analysis
 app.post('/analyze', async (req, res) => {
     try {
-        // 1. Get the essay text AND the taskType from the request
         const { essay, taskType } = req.body;
-        if (!essay) {
-            return res.status(400).json({ error: 'Essay text is required.' });
-        }
-        
-        // 2. Declare a variable to hold the chosen prompt
-        let prompt = '';
+        if (!essay) return res.status(400).json({ error: 'Essay text is required.' });
 
-        // 3. Use an if/else if block to select the correct prompt based on taskType
-        if (taskType === 'essay') {
-            prompt = `Act as a Cambridge C2 Proficiency writing examiner. Analyze the following discursive essay based on the two provided input texts.
-            Evaluate the essay against the C2 assessment criteria: Content, Communicative Achievement, Organisation, and Language.
-            - **Content:** Did the writer accurately summarize the key points from both texts? Did they evaluate the abstract arguments and effectively integrate their own ideas? Is the target reader fully informed?
-            - **Communicative Achievement:** Are the conventions of a discursive essay used with complete command? Are complex ideas communicated in a convincing and effective way?
-            - **Organisation:** Is the text impressively and coherently organised? Is there a wide range of cohesive devices and organizational patterns used with complete flexibility?
-            - **Language:** Is there a wide and sophisticated range of vocabulary and grammatical structures, used with precision and style? Are any inaccuracies only minor slips?
-            Provide a score from 1-5 for each subscale and detailed, constructive feedback with specific examples from the text.
-            Here is the essay:
+        // --- NEW, MORE ROBUST PROMPT ---
+        const prompt = `
+            Analyze the following ${taskType}.
+            Your response MUST be formatted as a single HTML block.
+            - Use <div> as the main container.
+            - Use <p> tags for each new paragraph or section. This is for line breaks.
+            - Use <strong> tags for section titles like "Content (1/5):".
+            - Do not use markdown like **.
+
+            Example response format:
+            <div>
+                <p><strong>Content (Score/5):</strong> Your analysis here.</p>
+                <p><strong>Communicative Achievement (Score/5):</strong> Your analysis here.</p>
+                <p><strong>Organisation (Score/5):</strong> Your analysis here.</p>
+                <p><strong>Language (Score/5):</strong> Your analysis here.</p>
+                <p><strong>Overall Feedback:</strong> Your overall feedback here.</p>
+            </div>
+
+            Here is the text to analyze:
             ---
             ${essay}
-            ---`;
-        } else if (taskType === 'article') {
-            prompt = `Act as a Cambridge C2 Proficiency writing examiner. Analyze the following article.
-            Evaluate the article against the C2 assessment criteria: Content, Communicative Achievement, Organisation, and Language.
-            - **Content:** Is all content relevant to the task? If the task requires describing an event and evaluating benefits, are both parts fully covered? Is the reader fully informed?
-            - **Communicative Achievement:** Does the article use an appropriate style and tone (e.g., engaging, personal, humorous) to hold the reader's attention with ease? Are genre conventions like a title and direct/indirect speech used effectively?
-            - **Organisation:** Is the text well-organised and coherent? Does it use varied organisational patterns to lead the reader through the topic naturally?
-            - **Language:** Is a wide range of vocabulary, including natural turns of phrase and collocations, used with style? Is grammar sophisticated and well-controlled?
-            Provide a score from 1-5 for each subscale and detailed, constructive feedback with specific examples from the text.
-            Here is the article:
             ---
-            ${essay}
-            ---`;
-        } else if (taskType === 'review') {
-            prompt = `Act as a Cambridge C2 Proficiency writing examiner. Analyze the following review.
-            Evaluate the review against the C2 assessment criteria: Content, Communicative Achievement, Organisation, and Language.
-            - **Content:** Does the review briefly describe the subject (e.g., story plot), explain its personal impact, and assess its wider relevance as required by the task? Is the reader fully informed?
-            - **Communicative Achievement:** Does the review use an informative and appealing tone to communicate complex ideas effectively? Are the conventions of a review (description, opinion, recommendation) used with flexibility?
-            - **Organisation:** Is the text a well-organised, coherent whole? Are ideas linked flexibly across sentences and paragraphs using cohesive devices like substitution?
-            - **Language:** Is a range of topic-specific and evaluative vocabulary used effectively and precisely? Is there a wide range of grammatical forms used with full control?
-            Provide a score from 1-5 for each subscale and detailed, constructive feedback with specific examples from the text.
-            Here is the review:
-            ---
-            ${essay}
-            ---`;
-        } else if (taskType === 'letter') {
-             prompt = `Act as a Cambridge C2 Proficiency writing examiner. Analyze the following letter.
-            Evaluate the letter against the C2 assessment criteria: Content, Communicative Achievement, Organisation, and Language.
-            - **Content:** Does the letter fully address all parts of the prompt, such as describing personal experiences and explaining crucial factors?
-            - **Communicative Achievement:** Are the conventions of letter writing (e.g., appropriate salutations, tone) used flexibly and effectively? Is the purpose for writing clear and are all communicative goals fulfilled?
-            - **Organisation:** Is the letter well-structured and coherent? Does it use cohesive devices to link ideas, for example, when contrasting different places or ideas?
-            - **Language:** Is a wide range of vocabulary and grammar used with control and sophistication to express views convincingly? Are expressions natural and precise?
-            Provide a score from 1-5 for each subscale and detailed, constructive feedback with specific examples from the text.
-            Here is the letter:
-            ---
-            ${essay}
-            ---`;
-        } else {
-            // Handle cases where the taskType is unknown
-            return res.status(400).json({ error: 'Invalid or unsupported task type provided.' });
-        }
-        
-        // 4. Send the request to the AI model with the correctly chosen prompt
+        `;
+
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const feedbackText = response.text();
+        let feedbackText = response.text();
+
+        // Clean the response to ensure it's valid HTML
+        feedbackText = feedbackText.replace(/```html/g, '').replace(/```/g, '').trim();
 
         res.json({ feedback: feedbackText });
 
@@ -96,36 +57,58 @@ app.post('/analyze', async (req, res) => {
     }
 });
 
-// --- NEW ENDPOINT: To summarize the writing feedback ---
-app.post('/summarize', async (req, res) => {
+// --- This is the NEW endpoint that replaces /summarize ---
+// --- This is the NEW endpoint that generates an HTML accordion ---
+app.post('/generate-report', async (req, res) => {
     try {
-        const { text } = req.body;
-        if (!text) {
-            return res.status(400).json({ error: 'Text for summarization is required.' });
+        const { readingResults, writingFeedback } = req.body;
+        if (!readingResults || !writingFeedback) {
+            return res.status(400).json({ error: 'Reading and Writing data are required.' });
         }
 
-        const prompt = `Please summarize the following writing feedback. Focus on the main strengths and the two most critical areas for improvement. Present it as a brief, encouraging paragraph.
-        
-        FEEDBACK TO SUMMARIZE:
-        ---
-        ${text}
-        ---`;
+        const prompt = `
+            Act as an expert C2-level English tutor. Your task is to provide a final performance report by synthesizing the user's reading performance and the AI's feedback on their writing.
+
+            Your entire response MUST be formatted as a single HTML block. Create three separate collapsible sections using the following structure:
+            
+            <div class="accordion-item">
+                <button class="accordion-header">Section Title</button>
+                <div class="accordion-content" style="display: none;">
+                    <p>Your analysis and feedback for this section go here.</p>
+                </div>
+            </div>
+
+            Create three sections with these exact titles:
+            1. Reading Performance Analysis
+            2. Writing Performance Analysis
+            3. Actionable Suggestions for Improvement
+
+            For the content:
+            - In "Reading Performance Analysis", analyze the user's reading results.
+            - In "Writing Performance Analysis", summarize the provided writing feedback.
+            - In "Actionable Suggestions", provide 2-3 specific, actionable suggestions based on the combined analysis.
+
+            DATA:
+            - Reading Results: ${JSON.stringify(readingResults)}
+            - Writing Feedback: ${writingFeedback}
+        `;
 
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const summaryText = response.text();
+        let reportText = response.text();
 
-        res.json({ summary: summaryText });
+        // Clean the response
+        reportText = reportText.replace(/```html/g, '').replace(/```/g, '').trim();
+
+        res.json({ report: reportText });
 
     } catch (error) {
-        console.error('Error in summarization:', error);
-        res.status(500).json({ error: 'Failed to summarize text.' });
+        console.error('Error in report generation:', error);
+        res.status(500).json({ error: 'Failed to generate report.' });
     }
 });
 
-// Start the server
 app.listen(port, () => {
     console.log(`🚀 Server is running on http://localhost:${port}`);
 });
-
