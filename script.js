@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         getFeedbackBtn.disabled = true;
         getFeedbackBtn.textContent = 'Analyzing...';
         try {
-            const response = await fetch('http://localhost:3000/analyze', {
+            const response = await fetch('https://luyenthic2.onrender.com/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -257,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (finalWritingFeedback) {
             try {
                 // Call the NEW /generate-report endpoint with both reading and writing data
-                const response = await fetch('http://localhost:3000/generate-report', {
+                const response = await fetch('https://luyenthic2.onrender.com/generate-report', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
