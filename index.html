@@ -1,495 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive C2 Proficiency Exam</title>
+    <title>Interactive C2 English Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Sophisticated Neutral -->
-    <!-- Application Structure Plan: The SPA is designed as a three-stage user journey to manage the high cognitive load of a C2 exam. Stage 1: An introductory screen that clearly outlines the qualitative leap from B2 to C2, setting user expectations. Stage 2: The core exam interface, using tabbed navigation for the three main papers. This allows users to tackle the long, complex sections (like the 90-minute Reading & UoE) without overwhelming vertical scroll, promoting focus. Stage 3: A post-submission, multi-faceted results dashboard. This structure is chosen for its superior usability in a high-stakes testing context, guiding the user from preparation to performance and then to deep analysis. -->
-    <!-- Visualization & Content Choices: Report Info: C2 exam tasks -> Goal: Assess mastery -> Viz/Method: Advanced interactive quiz forms (HTML) -> Interaction: Radio buttons, text inputs, complex textareas. Report Info: Performance scores -> Goal: Compare skills -> Viz/Method: Bar Chart (Chart.js) -> Interaction: Hover to see precise scores. Report Info: Overall grade -> Goal: Summarize achievement -> Viz/Method: Donut Chart (Chart.js) -> Interaction: Clear visual of pass/fail. Report Info: Writing assessment -> Goal: Teach sophisticated writing -> Viz/Method: Side-by-side comparison with model answer and interactive checklist (HTML/JS). This design translates the report's abstract assessment criteria into tangible, interactive learning tools. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="exam-data.js" defer></script>
+    <script src="script.js" defer></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .tab-active { border-bottom: 2px solid #4F46E5; color: #4F46E5; font-weight: 600; }
-        .exam-panel { display: none; }
-        .exam-panel.active { display: block; }
-        .feedback-item.correct { background-color: #F0FDF4; border-left: 4px solid #22C55E; }
-        .feedback-item.incorrect { background-color: #FEF2F2; border-left: 4px solid #EF4444; }
-        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
-        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tab-active {
+            border-bottom: 2px solid #3B82F6;
+            color: #3B82F6;
+            font-weight: 600;
+        }
+
+        .exam-panel {
+            display: none;
+        }
+
+        .exam-panel.active {
+            display: block;
+        }
+
+        .ai-feedback-pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+            font-family: monospace;
+            line-height: 1.6;
+        }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
 
-    <div id="app-container" class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+<body class="bg-gray-50 text-gray-800">
 
-        <!-- ===== START SCREEN ===== -->
+    <div id="app-container" class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+
         <div id="start-screen">
             <div class="bg-white p-8 rounded-xl shadow-lg text-center">
-                <h1 class="text-3xl font-bold text-indigo-600 mb-2">C2 Proficiency: Interactive Practice Exam</h1>
-                <p class="text-gray-600 mb-6">Challenge yourself with an exam designed to reflect the mastery level of the CEFR C2 framework.</p>
-                <div class="text-left bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">The Leap to C2 Mastery</h2>
-                    <p class="mb-4 text-gray-700">The C2 level is a significant step up from B2. It's not just about being fluent; it's about precision, sophistication, and the ability to understand and manipulate complex language with ease. This exam will test your ability to:</p>
-                    <ul class="space-y-3 text-gray-700">
-                        <li class="flex items-start"><span class="text-indigo-500 font-bold mr-3">►</span><div><strong>Synthesize & Evaluate:</strong> Go beyond summarizing to critically assess arguments from multiple sources, a key skill in the C2 Writing paper.</div></li>
-                        <li class="flex items-start"><span class="text-indigo-500 font-bold mr-3">►</span><div><strong>Understand Nuance:</strong> Comprehend implicit meaning, attitude, and irony in complex written texts and fast-paced speech.</div></li>
-                        <li class="flex items-start"><span class="text-indigo-500 font-bold mr-3">►</span><div><strong>Command Language:</strong> Demonstrate a sophisticated control of vocabulary, including idioms and collocations, and complex grammatical structures.</div></li>
-                    </ul>
+                <h1 class="text-3xl font-bold text-blue-600 mb-2">C2 Proficiency: Interactive Practice</h1>
+                <p class="text-gray-600 mb-8">Please select an exam to begin.</p>
+
+                <div id="exam-menu" class="flex flex-col items-center space-y-4">
                 </div>
-                <button id="start-exam-btn" class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-3 px-10 rounded-lg hover:bg-indigo-700 transition-colors text-lg">Begin C2 Challenge</button>
             </div>
         </div>
 
-        <!-- ===== EXAM SCREEN ===== -->
         <div id="exam-screen" class="hidden">
             <form id="exam-form">
                 <header class="bg-white p-4 rounded-xl shadow-md mb-6 sticky top-4 z-10">
                     <div class="flex justify-between items-center">
-                        <h1 class="text-xl font-bold text-indigo-600">C2 Proficiency Practice Exam</h1>
-                        <div id="timer" class="text-lg font-semibold bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full">2:30:00</div>
+                        <h1 id="exam-title-header" class="text-xl font-bold text-blue-600">C2 Practice Exam</h1>
+                        <div id="timer" class="text-lg font-semibold bg-blue-100 text-blue-700 px-4 py-1 rounded-full">
+                            1:30:00</div>
                     </div>
                     <nav class="mt-4 border-b border-gray-200">
                         <ul class="flex space-x-4 sm:space-x-8 -mb-px">
-                            <li><button type="button" data-tab="reading" class="exam-tab tab-active py-3 px-1 text-sm sm:text-base">Reading & Use of English</button></li>
-                            <li><button type="button" data-tab="writing" class="exam-tab py-3 px-1 text-sm sm:text-base text-gray-500">Writing</button></li>
-                            <li><button type="button" data-tab="listening" class="exam-tab py-3 px-1 text-sm sm:text-base text-gray-500">Listening</button></li>
+                            <li><button type="button" data-tab="reading"
+                                    class="exam-tab tab-active py-3 px-1 text-sm sm:text-base">Reading & Use of
+                                    English</button></li>
+                            <li><button type="button" data-tab="writing"
+                                    class="exam-tab py-3 px-1 text-sm sm:text-base text-gray-500">Writing</button></li>
                         </ul>
                     </nav>
                 </header>
 
                 <main class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                    <!-- Reading & Use of English Panel -->
                     <div id="reading-panel" class="exam-panel active">
-                        <p class="mb-8 text-gray-600">This paper lasts 1 hour 30 minutes. It tests your high-level comprehension skills and sophisticated command of the English language system. The texts are complex and require deep processing.</p>
-                        
-                        <article class="exam-part mb-12">
-                            <h3 class="text-xl font-semibold border-b-2 border-indigo-200 pb-2 mb-4">Part 1: Multiple-choice cloze</h3>
-                            <p class="mb-4 text-gray-600">For questions 1-4, read the text below and decide which answer (A, B, C or D) best fits each gap. This part tests your knowledge of semantic precision, collocations, and idioms.</p>
-                            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-6">
-                                <h4 class="text-lg font-semibold mb-2">The Nature of Genius</h4>
-                                <p class="text-gray-700 leading-relaxed">
-                                    The term 'genius' is one that is often (1)___ about with surprising liberality, yet the true nature of such an attribute remains stubbornly elusive. Is it a product of innate, god-given talent, or the result of a lifetime of relentless dedication? The 10,000-hour rule, popularized by author Malcolm Gladwell, (2)___ that mastery is largely a matter of practice. However, this view has been challenged by those who point to child prodigies who (3)___ skills that seem to defy explanation. Perhaps the truth lies somewhere in the middle, a potent cocktail of genetic predisposition and environmental factors. What is undeniable is that true genius not only masters a field but fundamentally reshapes it, leaving an (4)___ mark on the world.
-                                </p>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                                <div><strong>1.</strong><div class="mt-2 space-y-2"><label class="block"><input type="radio" name="q1" value="A"> bandied</label><label class="block"><input type="radio" name="q1" value="B"> tossed</label><label class="block"><input type="radio" name="q1" value="C"> thrown</label><label class="block"><input type="radio" name="q1" value="D"> flung</label></div></div>
-                                <div><strong>2.</strong><div class="mt-2 space-y-2"><label class="block"><input type="radio" name="q2" value="A"> constitutes</label><label class="block"><input type="radio" name="q2" value="B"> posits</label><label class="block"><input type="radio" name="q2" value="C"> installs</label><label class="block"><input type="radio" name="q2" value="D"> frames</label></div></div>
-                                <div><strong>3.</strong><div class="mt-2 space-y-2"><label class="block"><input type="radio" name="q3" value="A"> exhibit</label><label class="block"><input type="radio" name="q3" value="B"> portray</label><label class="block"><input type="radio" name="q3" value="C"> feature</label><label class="block"><input type="radio" name="q3" value="D"> conduct</label></div></div>
-                                <div><strong>4.</strong><div class="mt-2 space-y-2"><label class="block"><input type="radio" name="q4" value="A"> indelible</label><label class="block"><input type="radio" name="q4" value="B"> perpetual</label><label class="block"><input type="radio" name="q4" value="C"> unfading</label><label class="block"><input type="radio" name="q4" value="D"> steadfast</label></div></div>
-                            </div>
-                        </article>
-
-                        <article class="exam-part mb-12">
-                            <h3 class="text-xl font-semibold border-b-2 border-indigo-200 pb-2 mb-4">Part 4: Key word transformations</h3>
-                             <p class="mb-4 text-gray-600">For questions 5-6, complete the second sentence so that it has a similar meaning to the first sentence, using the word given. Do not change the word given. You must use between three and eight words, including the word given.</p>
-                            <div class="space-y-6">
-                                <div>
-                                    <p><strong>5. The new regulations will mean that many small businesses will probably go bankrupt.</strong></p>
-                                    <p class="font-semibold">LIKELY</p>
-                                    <p>The new regulations will mean that many small businesses are _______________ out of business.</p>
-                                    <input type="text" name="q5" class="w-full mt-2 p-2 border border-gray-300 rounded-lg">
-                                </div>
-                                <div>
-                                    <p><strong>6. I was surprised at how easy it was for him to get the new job.</strong></p>
-                                    <p class="font-semibold">EASE</p>
-                                    <p>To my surprise, he got the new job _______________ whatsoever.</p>
-                                    <input type="text" name="q6" class="w-full mt-2 p-2 border border-gray-300 rounded-lg">
-                                </div>
-                            </div>
-                        </article>
+                        <div id="reading-task-container"></div>
                     </div>
 
-                    <!-- Writing Panel -->
                     <div id="writing-panel" class="exam-panel">
-                        <p class="mb-8 text-gray-600">This paper lasts 1 hour 30 minutes. Part 1 is a compulsory essay requiring you to synthesize and evaluate arguments from two short texts. Part 2 offers a choice of tasks where you must demonstrate mastery of genre and register.</p>
-                        <article class="exam-part mb-12">
-                            <h3 class="text-xl font-semibold border-b-2 border-indigo-200 pb-2 mb-4">Part 1: Essay (Compulsory)</h3>
-                            <p class="mb-4 text-gray-600">Read the two texts below. Write an essay summarizing and evaluating the key points from both texts. Use your own words throughout as far as possible, and include your own ideas in your answers. Write your answer in 240-280 words.</p>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                                <div class="writing-prompt bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-                                    <h4 class="font-semibold">The Digital Archive</h4>
-                                    <p class="text-sm mt-2">The digital revolution has granted us an unprecedented gift: the ability to record, store, and access virtually every piece of information we encounter. Our lives are meticulously documented in photos, messages, and social media timelines, creating a vast external memory that never fades. This technological prosthesis frees up cognitive resources, allowing us to focus on creative problem-solving rather than rote memorization. We no longer need to clutter our minds with facts and figures that are instantly accessible via a search engine, heralding a new era of intellectual efficiency.</p>
-                                </div>
-                                <div class="writing-prompt bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-                                    <h4 class="font-semibold">Memory and Identity</h4>
-                                    <p class="text-sm mt-2">The philosophical concept of self is inextricably linked to memory. Our identity is not a static entity but a narrative we construct from the tapestry of our experiences, recollections, and the emotions they evoke. It is the internal, subjective process of remembering—and even misremembering—that shapes our character and our understanding of our place in the world. To outsource this fundamental human process to an external, infallible digital archive is to risk fragmenting the very essence of who we are. A life perfectly recorded is not necessarily a life fully lived or understood.</p>
-                                </div>
-                            </div>
-                            <textarea id="writing-part1" rows="14" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Write your synthesis and evaluation essay here..."></textarea>
-                            <div id="wc-part1" class="text-right text-sm text-gray-500 mt-1">Word count: 0</div>
-                        </article>
-                    </div>
-
-                    <!-- Listening Panel -->
-                    <div id="listening-panel" class="exam-panel">
-                        <p class="mb-8 text-gray-600">This paper lasts approximately 40 minutes. You will hear each recording twice. The recordings feature a range of accents and are delivered at a natural, often fast, pace. The tasks require you to understand not just what is said, but also the speakers' attitudes, opinions, and intentions.</p>
-                        <article class="exam-part mb-12">
-                            <h3 class="text-xl font-semibold border-b-2 border-indigo-200 pb-2 mb-4">Part 1: Multiple choice</h3>
-                             <p class="mb-4 text-gray-600">You will hear three short extracts. For questions 1-2, choose the answer (A, B or C) which fits best according to what you hear. There are two questions for each extract.</p>
-                            <div class="audio-controls bg-gray-100 p-4 rounded-lg mb-6">
-                                <p class="font-semibold mb-2">Audio for Extract One</p>
-                                <audio id="audio-part1" src="https://storage.googleapis.com/gemini-long-cs-assets/c2-listening-sample.mp3" preload="none"></audio>
-                                <button type="button" id="play-part1" class="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition">Play</button>
-                                <span id="play-count1" class="ml-4 text-sm text-gray-600">Plays remaining: 2</span>
-                            </div>
-                            <div class="space-y-6">
-                                <div>
-                                    <p><strong>1. The woman feels that the problem with her company's 'innovation culture' is that it</strong></p>
-                                    <div class="mt-2 space-y-2"><label class="block"><input type="radio" name="lq1" value="A"> fails to generate genuinely original ideas.</label><label class="block"><input type="radio" name="lq1" value="B"> prioritises process over meaningful outcomes.</label><label class="block"><input type="radio" name="lq1" value="C"> discourages collaboration between departments.</label></div>
-                                </div>
-                                <div>
-                                    <p><strong>2. What is the man's main point about business literature?</strong></p>
-                                    <div class="mt-2 space-y-2"><label class="block"><input type="radio" name="lq2" value="A"> It often repackages common sense as profound insight.</label><label class="block"><input type="radio" name="lq2" value="B"> It is more relevant for large corporations than for startups.</label><label class="block"><input type="radio" name="lq2" value="C"> It provides a useful framework for strategic thinking.</label></div>
-                                </div>
-                            </div>
-                        </article>
+                        <div id="writing-task-container"></div>
+                        <textarea id="writing-part1" rows="15"
+                            class="w-full mt-4 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                            placeholder="Write your text here..."></textarea>
+                        <div class="flex justify-between items-center mt-2">
+                            <button type="button" id="get-feedback-btn"
+                                class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors">Get
+                                AI Feedback</button>
+                            <div id="wc-part1" class="text-right text-sm text-gray-500">Word count: 0</div>
+                        </div>
+                        <div id="ai-feedback-area" class="mt-6"></div>
                     </div>
                 </main>
 
                 <footer class="mt-8">
-                    <button type="submit" id="submit-btn" class="w-full bg-green-600 text-white font-bold py-4 px-6 rounded-lg hover:bg-green-700 transition-colors text-xl">Submit Exam & See Results</button>
+                    <button type="submit" id="submit-btn"
+                        class="w-full bg-green-600 text-white font-bold py-4 px-6 rounded-lg hover:bg-green-700 transition-colors text-xl">Submit
+                        Exam</button>
                 </footer>
             </form>
         </div>
 
         <!-- ===== RESULTS SCREEN ===== -->
         <div id="results-screen" class="hidden">
-             <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                <h1 class="text-3xl font-bold text-indigo-600 mb-2 text-center">Your Performance Analysis</h1>
-                <p class="text-gray-600 mb-8 text-center">This report analyzes your performance against the C2 Mastery standard. Use the detailed feedback to hone your skills.</p>
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                <h1 class="text-3xl font-bold text-blue-600 mb-8 text-center">Performance Report</h1>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                    <div class="lg:col-span-1 bg-gray-50 p-6 rounded-lg border border-gray-200 flex flex-col justify-center items-center">
-                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Overall Grade</h3>
-                        <div class="chart-container w-full max-w-[250px] h-auto aspect-square">
-                            <canvas id="overallScoreChart"></canvas>
-                        </div>
-                        <p id="overall-grade" class="text-2xl font-bold text-indigo-600 mt-4"></p>
-                    </div>
-                    <div class="lg:col-span-2 bg-gray-50 p-6 rounded-lg border border-gray-200">
-                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Performance by Skill</h3>
-                        <p class="text-sm text-gray-500 mb-4">This chart shows your percentage score for each paper, highlighting your proficiency in handling different types of linguistic challenges.</p>
-                        <div class="chart-container h-[250px] sm:h-[300px]">
-                            <canvas id="breakdownChart"></canvas>
-                        </div>
+                <!-- ====================================================== -->
+                <!-- ==  THIS IS THE NEW SECTION FOR READING FEEDBACK  ==== -->
+                <!-- ====================================================== -->
+                <div id="reading-feedback-container" class="mb-8">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4 border-b-2 border-blue-200 pb-3">Reading & Use
+                        of English Feedback</h3>
+                    <div id="reading-feedback-content" class="space-y-4">
+                        <!-- The script will fill this part with the detailed reading results -->
                     </div>
                 </div>
+                <!-- ====================================================== -->
+                <!-- ===========  END OF NEW READING SECTION  ============= -->
+                <!-- ====================================================== -->
 
-                <div>
-                    <h3 class="text-2xl font-semibold text-gray-800 mb-6 border-b-2 border-indigo-200 pb-3">Detailed Feedback</h3>
-                    <div id="detailed-feedback" class="space-y-6"></div>
-                </div>
-                 
-                <div class="mt-12">
-                    <h3 class="text-2xl font-semibold text-gray-800 mb-6 border-b-2 border-indigo-200 pb-3">Writing Self-Assessment</h3>
-                    <p class="text-gray-600 mb-6">Evaluating your own writing is a key C2 skill. Compare your synthesis essay with the model answer below and use the C2 criteria checklist to critically assess your performance. This exercise is crucial for developing sophisticated writing abilities.</p>
-                    <div id="writing-self-assessment"></div>
+                <!-- This is your existing writing feedback section -->
+                <div id="final-writing-assessment" class="mb-8">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4 border-b-2 border-blue-200 pb-3">Writing Task
+                        Summary</h3>
+                    <div id="writing-feedback-content" class="space-y-4">
+                        <!-- The script will fill this part with the writing summary -->
+                    </div>
                 </div>
 
-             </div>
+                <div class="text-center mt-8">
+                    <button id="restart-btn"
+                        class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-10 rounded-lg hover:bg-blue-700 transition-colors text-lg">Back
+                        to Menu</button>
+                </div>
+            </div>
         </div>
     </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const startScreen = document.getElementById('start-screen');
-    const examScreen = document.getElementById('exam-screen');
-    const resultsScreen = document.getElementById('results-screen');
-    const startBtn = document.getElementById('start-exam-btn');
-    const examForm = document.getElementById('exam-form');
-    const tabs = document.querySelectorAll('.exam-tab');
-    const panels = document.querySelectorAll('.exam-panel');
-    let timerInterval;
-
-    const userAnswers = {};
-    const answerKey = {
-        q1: { answer: 'A', explanation: "The correct idiom is 'to bandy something about', which means to mention something in a casual, often inappropriate way. The other verbs don't form this specific idiom." },
-        q2: { answer: 'B', explanation: "'Posits' means to put forward as a basis for argument, which is the precise academic term for what a theory or rule does. The other options are less appropriate for this formal context." },
-        q3: { answer: 'A', explanation: "'Exhibit' means to show or display a quality or a type of behaviour. It is the most suitable verb for demonstrating skills in a formal context." },
-        q4: { answer: 'A', explanation: "'Indelible' means impossible to remove or forget, creating a strong and permanent image. It's a classic collocation with 'mark'." },
-        q5: { answer: 'likely to be forced', explanation: "This transformation requires changing the structure to 'are likely to be' and using a passive form 'forced out of business' to convey the meaning of 'go bankrupt'." },
-        q6: { answer: 'with no/without any ease whatsoever', explanation: "This tests the fixed phrase 'with ease'. The intensifier 'whatsoever' requires a negative structure, so either 'with no ease' or 'without any ease' is correct." },
-        lq1: { answer: 'B', explanation: "The woman says they're 'slaves to the process' and 'obsessed with the brainstorming optics' rather than 'shipping a product'. This points to a focus on process over outcomes." },
-        lq2: { answer: 'A', explanation: "The man says these books 'dress up blindingly obvious advice in a fancy suit' and 'state the self-evident', meaning he thinks they repackage common sense." },
-    };
-
-    startBtn.addEventListener('click', () => {
-        startScreen.classList.add('hidden');
-        examScreen.classList.remove('hidden');
-        startTimer(150 * 60);
-    });
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            tabs.forEach(t => t.classList.remove('tab-active', 'text-gray-500'));
-            e.target.classList.add('tab-active');
-            tabs.forEach(t => { if (!t.classList.contains('tab-active')) t.classList.add('text-gray-500'); });
-            
-            panels.forEach(panel => panel.classList.remove('active'));
-            document.getElementById(`${e.target.dataset.tab}-panel`).classList.add('active');
-        });
-    });
-
-    function startTimer(duration) {
-        let timer = duration, hours, minutes, seconds;
-        const display = document.getElementById('timer');
-        timerInterval = setInterval(() => {
-            hours = parseInt(timer / 3600, 10);
-            minutes = parseInt((timer % 3600) / 60, 10);
-            seconds = parseInt(timer % 60, 10);
-
-            hours = hours < 10 ? "0" + hours : hours;
-            minutes = minutes < 10 ? "0" + minutes : minutes;
-            seconds = seconds < 10 ? "0" + seconds : seconds;
-
-            display.textContent = hours + ":" + minutes + ":" + seconds;
-
-            if (--timer < 0) {
-                clearInterval(timerInterval);
-                display.textContent = "Time's up!";
-                examForm.requestSubmit();
-            }
-        }, 1000);
-    }
-    
-    const writingPart1 = document.getElementById('writing-part1');
-    const wcPart1 = document.getElementById('wc-part1');
-    writingPart1.addEventListener('input', () => {
-        const words = writingPart1.value.trim().split(/\s+/).filter(Boolean);
-        wcPart1.textContent = `Word count: ${words.length}`;
-    });
-
-    const audioPlayer = (audioId, playBtnId, playCountId) => {
-        const audio = document.getElementById(audioId);
-        const playBtn = document.getElementById(playBtnId);
-        const playCountSpan = document.getElementById(playCountId);
-        let playCount = 2;
-
-        playBtn.addEventListener('click', () => {
-            if (playCount > 0 && audio.paused) {
-                audio.play();
-                playBtn.textContent = 'Playing...';
-                playBtn.disabled = true;
-            }
-        });
-        
-        audio.onended = () => {
-            playCount--;
-            playCountSpan.textContent = `Plays remaining: ${playCount}`;
-            playBtn.textContent = 'Play Again';
-            playBtn.disabled = false;
-            if (playCount === 0) {
-                playBtn.textContent = 'Finished';
-                playBtn.disabled = true;
-                playBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                playBtn.classList.remove('bg-indigo-500', 'hover:bg-indigo-600');
-            }
-        };
-    };
-    audioPlayer('audio-part1', 'play-part1', 'play-count1');
-
-    examForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        clearInterval(timerInterval);
-
-        const formData = new FormData(examForm);
-        for (const [key, value] of formData.entries()) {
-            userAnswers[key] = value.trim();
-        }
-        userAnswers['writing1'] = document.getElementById('writing-part1').value;
-        
-        processResults();
-        examScreen.classList.add('hidden');
-        resultsScreen.classList.remove('hidden');
-        window.scrollTo(0, 0);
-    });
-
-    function processResults() {
-        let readingScore = 0;
-        let listeningScore = 0;
-        const totalReadingQs = 6;
-        const totalListeningQs = 2;
-
-        let feedbackHTML = '';
-        
-        feedbackHTML += '<h4 class="text-xl font-semibold text-gray-700 mb-4">Reading & Use of English</h4><div class="space-y-4">';
-        for (let i = 1; i <= 4; i++) {
-            const qKey = `q${i}`;
-            const isCorrect = userAnswers[qKey] === answerKey[qKey].answer;
-            if (isCorrect) readingScore++;
-            feedbackHTML += createFeedbackItem(qKey, isCorrect, userAnswers[qKey], answerKey[qKey].answer, answerKey[qKey].explanation);
-        }
-        for (let i = 5; i <= 6; i++) {
-            const qKey = `q${i}`;
-            const isCorrect = userAnswers[qKey].toLowerCase() === answerKey[qKey].answer;
-            if (isCorrect) readingScore += 2; // Key word transformations are worth 2 marks
-            feedbackHTML += createFeedbackItem(qKey, isCorrect, userAnswers[qKey], answerKey[qKey].answer, answerKey[qKey].explanation);
-        }
-        feedbackHTML += '</div>';
-
-        feedbackHTML += '<h4 class="text-xl font-semibold text-gray-700 mt-8 mb-4">Listening</h4><div class="space-y-4">';
-        for (let i = 1; i <= totalListeningQs; i++) {
-            const qKey = `lq${i}`;
-            const isCorrect = userAnswers[qKey] === answerKey[qKey].answer;
-            if (isCorrect) listeningScore++;
-            feedbackHTML += createFeedbackItem(qKey, isCorrect, userAnswers[qKey], answerKey[qKey].answer, answerKey[qKey].explanation);
-        }
-        feedbackHTML += '</div>';
-
-        document.getElementById('detailed-feedback').innerHTML = feedbackHTML;
-        
-        const readingPercentage = (readingScore / 8) * 100; // 4*1 + 2*2 = 8 marks
-        const listeningPercentage = (listeningScore / totalListeningQs) * 100;
-        const totalScore = (readingScore + listeningScore);
-        const totalQuestions = (8 + totalListeningQs);
-        const overallPercentage = (totalScore / totalQuestions) * 100;
-        
-        let grade = 'Needs Improvement (B2)';
-        if (overallPercentage >= 80) grade = 'Pass at Grade A';
-        else if (overallPercentage >= 70) grade = 'Pass at Grade B';
-        else if (overallPercentage >= 60) grade = 'Pass at Grade C (C2)';
-        
-        document.getElementById('overall-grade').textContent = grade;
-
-        renderOverallScoreChart(overallPercentage);
-        renderBreakdownChart(readingPercentage, listeningPercentage);
-        document.getElementById('writing-self-assessment').innerHTML = generateWritingAssessment(userAnswers.writing1);
-    }
-
-    function createFeedbackItem(qId, isCorrect, userAnswer, correctAnswer, explanation) {
-        const status = isCorrect ? 'Correct' : 'Incorrect';
-        return `
-            <div class="feedback-item p-4 rounded-lg">
-                <p class="font-semibold"><strong>Question ${qId.toUpperCase()}: ${status}</strong></p>
-                <p class="text-sm mt-1">Your answer: <span class="font-medium">${userAnswer || 'No answer'}</span></p>
-                ${!isCorrect ? `<p class="text-sm">Correct answer: <span class="font-medium">${correctAnswer}</span></p>` : ''}
-                <div class="text-sm mt-2 pt-2 border-t border-gray-300">
-                    <strong class="text-gray-600">Rationale:</strong> ${explanation}
-                </div>
-            </div>
-        `;
-    }
-
-    let overallScoreChart, breakdownChart;
-
-    function renderOverallScoreChart(percentage) {
-        const ctx = document.getElementById('overallScoreChart').getContext('2d');
-        if(overallScoreChart) overallScoreChart.destroy();
-        overallScoreChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Score', 'Remaining'],
-                datasets: [{
-                    data: [percentage, 100 - percentage],
-                    backgroundColor: ['#4F46E5', '#E5E7EB'],
-                    borderColor: ['#ffffff'],
-                    borderWidth: 4,
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: false }
-                }
-            }
-        });
-    }
-
-    function renderBreakdownChart(reading, listening) {
-        const ctx = document.getElementById('breakdownChart').getContext('2d');
-        if(breakdownChart) breakdownChart.destroy();
-        breakdownChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Reading & Use of English', 'Listening'],
-                datasets: [{
-                    label: 'Score',
-                    data: [reading, listening],
-                    backgroundColor: ['#818CF8', '#4F46E5'],
-                    borderColor: ['#6366F1', '#4338CA'],
-                    borderWidth: 1,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: { callback: value => value + '%' }
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: context => `${context.dataset.label}: ${context.raw.toFixed(1)}%`
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function generateWritingAssessment(userText) {
-        const modelEssay = `
-            <h4 class="text-lg font-semibold mb-2">Model C2 Essay</h4>
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 leading-relaxed text-sm">
-                <p>The two texts present a compelling dichotomy regarding the role of digital technology in relation to human memory. The first text champions the digital archive as a form of cognitive liberation, a prosthesis that enhances intellectual efficiency by outsourcing the burden of rote memorization. Conversely, the second text posits a more cautionary perspective, arguing that memory is the fundamental bedrock of personal identity and that externalizing this deeply subjective process risks a fragmentation of the self.</p>
-                <p class="mt-2">In evaluating these viewpoints, one must concede the practical utility of the digital archive. The ability to instantly access factual data is undeniably efficient. However, the first text's argument perhaps overlooks the distinction between 'information' and 'knowledge'. While information is external and accessible, knowledge is internal and integrated, formed through the very cognitive processes that the text suggests we should bypass. The second text's argument, therefore, resonates more profoundly. It correctly identifies that our identity is a narrative woven from personal recollections. The emotional texture of a memory, its very fallibility, is part of its power. An infallible digital record, devoid of subjective interpretation, cannot replicate this.</p>
-                <p class="mt-2">Ultimately, a synthesis of these views suggests that the ideal approach is one of balance. We should leverage digital tools as supplements, not substitutes, for our own cognitive faculties. Using technology to manage ephemeral data is sensible, but we must consciously continue to engage in the internal, reflective process of memory-making to cultivate a robust sense of self. The danger is not in the technology itself, but in a passive over-reliance upon it.</p>
-            </div>
-        `;
-        
-        const assessmentChecklist = `
-            <h4 class="text-lg font-semibold mb-2 mt-6">C2 Self-Assessment Checklist</h4>
-            <div class="space-y-4 text-sm">
-                <div>
-                    <h5 class="font-semibold">Content</h5>
-                    <label class="block mt-1"><input type="checkbox" class="mr-2">Did I accurately summarize the key points from BOTH texts?</label>
-                    <label class="block mt-1"><input type="checkbox" class="mr-2">Did I EVALUATE these points, not just describe them?</label>
-                    <label class="block mt-1"><input type="checkbox" class="mr-2">Did I integrate my own ideas in a relevant and sophisticated way?</label>
-                </div>
-                <div>
-                    <h5 class="font-semibold">Communicative Achievement</h5>
-                    <label class="block mt-1"><input type="checkbox" class="mr-2">Is the register consistently formal and academic?</label>
-                    <label class="block mt-1"><input type="checkbox" class="mr-2">Are complex ideas communicated in a convincing and effective manner?</label>
-                </div>
-                <div>
-                    <h5 class="font-semibold">Organisation</h5>
-                    <label class="block mt-1"><input type="checkbox" class="mr-2">Is the essay impressively coherent, with a clear logical flow?</label>
-                    <label class="block mt-1"><input type="checkbox" class="mr-2">Did I use a wide range of cohesive devices and organisational patterns with complete flexibility?</label>
-                </div>
-                <div>
-                    <h5 class="font-semibold">Language</h5>
-                    <label class="block mt-1"><input type="checkbox" class="mr-2">Did I use a wide range of sophisticated vocabulary (e.g., 'dichotomy', 'prosthesis', 'inextricably') with precision?</label>
-                    <label class="block mt-1"><input type="checkbox" class="mr-2">Is my use of grammar sophisticated, fully controlled, and natural?</label>
-                </div>
-            </div>
-        `;
-
-        return `
-            <h4 class="text-lg font-semibold mb-2">Your Essay</h4>
-            <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 mb-6 min-h-[100px] text-sm">${userText.replace(/\n/g, '<br>') || 'No answer submitted.'}</div>
-            ${modelEssay}
-            ${assessmentChecklist}
-        `;
-    }
-});
-</script>
-
 </body>
+
 </html>
