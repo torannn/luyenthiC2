@@ -42,11 +42,6 @@
             line-height: 1.6;
         }
 
-        /* --- FINAL ACCORDION STYLES --- */
-        .accordion-item > button::before {
-            display: none !important;
-            content: "" !important;
-        }
         .accordion-header {
             background-color: #f3f4f6;
             color: #1f2937;
@@ -70,26 +65,26 @@
             background-color: #e5e7eb;
         }
 
-        /* This is the CLOSED BOOK emoji for the default state */
         .accordion-header::after {
             content: '📖';
             font-size: 1.5rem;
             transition: transform 0.3s ease;
         }
 
-        /* This is the OPEN BOOK emoji for the active/open state */
         .accordion-header.active::after {
             content: '📙';
             transform: rotate(0deg);
+            /* Keeping your original rotation (though 180deg is typical) */
         }
 
-        /* This rule defines the CLOSED state of the content */
         .accordion-content {
             padding: 0 1rem;
+            /* Start with no top/bottom padding */
             background-color: white;
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out, padding 0.2s ease-out;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+            /* Keep the smooth transition */
             border-left: 1px solid #e5e7eb;
             border-right: 1px solid #e5e7eb;
             border-bottom: 1px solid #e5e7eb;
@@ -97,9 +92,18 @@
             border-bottom-right-radius: 0.5rem;
         }
 
-        /* This rule defines the OPEN state of the content */
-        .accordion-header.active+.accordion-content {
-            padding: 1rem;
+        .accordion-header.active + .accordion-content {
+            padding: 1rem 1rem 25px 1rem; /* Top, Right, Bottom (25px), Left */
+        }
+
+        /* New minimal addition to fix text wrapping */
+        .accordion-content p {
+            white-space: normal;
+            /* Already added, confirming it */
+            margin: 0;
+            /* Preserve spacing */
+            display: block;
+            /* Ensure block-level behavior */
         }
     </style>
 </head>

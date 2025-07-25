@@ -34,25 +34,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- FINAL, ROBUST ACCORDION FUNCTION ---
     function initializeAccordions() {
-        const accordions = document.querySelectorAll('.accordion-item');
+        const headers = document.querySelectorAll('.accordion-header');
 
-        accordions.forEach(item => {
-            const header = item.querySelector('.accordion-header');
-            const content = item.querySelector('.accordion-content');
-
+        headers.forEach(header => {
             header.addEventListener('click', () => {
-                // Toggle the active class on the header for styling (e.g., emoji change)
                 header.classList.toggle('active');
+                const content = header.nextElementSibling;
 
-                // Check if the content is currently open (maxHeight is not 0 or null)
                 if (content.style.maxHeight) {
-                    // If open, close it
                     content.style.maxHeight = null;
                 } else {
-                    // If closed, open it by setting maxHeight to its full scrollable height
-                    content.style.maxHeight = content.scrollHeight + "px";
+                    // Force reflow and recalculate scrollHeight
+                    content.style.display = 'block';
+                    const height = content.scrollHeight;
+                    content.style.maxHeight = height + "px";
                 }
             });
         });
@@ -174,25 +170,39 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Please write your text before requesting feedback.");
             return;
         }
-        aiFeedbackArea.innerHTML = `<p class="text-indigo-600">🤖 Analyzing... Please wait.</p>`;
+        aiFeedbackArea.innerHTML = `<p class="text-indigo-600">🤖 Displaying fake data for testing...</p>`;
+
+        // --- TESTING MODE ---
+        // Instead of calling the server, we immediately provide fake feedback.
+        // This saves your API quota while you test the layout.
+        finalWritingFeedback = `
+        <div>
+            <p><strong>Content (TEST):</strong> This is fake feedback to test the layout.</p>
+            <p><strong>Communicative Achievement (TEST):</strong> The accordion and styles are working correctly.</p>
+        </div>
+    `;
+        aiFeedbackArea.innerHTML = finalWritingFeedback;
+
+
+        /* --- REAL API CALL (Currently Disabled) ---
+           To use the real AI again, delete the "TESTING MODE" block above
+           and use Shift + Alt + A to uncomment this block.
+    
         getFeedbackBtn.disabled = true;
         getFeedbackBtn.textContent = 'Analyzing...';
         try {
             const response = await fetch('https://luyenthic2.onrender.com/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: JSON.stringify({ 
                     essay: textToAnalyze,
-                    taskType: currentExam.writing.part1.taskType
+                    taskType: currentExam.writing.part1.taskType 
                 })
             });
             if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
             const data = await response.json();
             finalWritingFeedback = data.feedback;
-
-            // ** THE CHANGE IS HERE: No more <pre> tag. We render the AI's HTML directly. **
             aiFeedbackArea.innerHTML = finalWritingFeedback;
-
         } catch (error) {
             console.error("Error:", error);
             aiFeedbackArea.innerHTML = `<p class="text-red-600">An error occurred. Please ensure the backend server is running.</p>`;
@@ -200,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
             getFeedbackBtn.disabled = false;
             getFeedbackBtn.textContent = 'Get AI Feedback';
         }
+        */
     });
 
     // --- FINAL VERSION: This function processes all results and generates the final report ---
@@ -235,7 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const userAnswer = userAnswers[questionId];
             const isCorrect = userAnswer === q.answer;
 
-            // A. Add the result to the array we'll send to the AI
             readingResultsForAI.push({
                 question: q.q,
                 userAnswer: userAnswer || "No answer",
@@ -243,26 +253,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 isCorrect: isCorrect
             });
 
-            // B. Build the HTML for display on the page
             const status = isCorrect ? 'Correct' : 'Incorrect';
             const statusColor = isCorrect ? 'text-green-600' : 'text-red-600';
             readingFeedbackHTML += `
-            <div class="p-4 rounded-lg border ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
-                <p class="font-semibold"><strong class="${statusColor}">Question ${q.q}: ${status}</strong></p>
-                <p class="text-sm mt-1">Your answer: <span class="font-medium">${userAnswer || 'No answer'}</span></p>
-                ${!isCorrect ? `<p class="text-sm">Correct answer: <span class="font-medium">${q.answer}</span></p>` : ''}
-                <div class="text-sm mt-2 pt-2 border-t border-gray-200">
-                    <strong class="text-gray-600">Rationale:</strong> ${q.explanation}
-                </div>
+        <div class="p-4 rounded-lg border ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
+            <p class="font-semibold"><strong class="${statusColor}">Question ${q.q}: ${status}</strong></p>
+            <p class="text-sm mt-1">Your answer: <span class="font-medium">${userAnswer || 'No answer'}</span></p>
+            ${!isCorrect ? `<p class="text-sm">Correct answer: <span class="font-medium">${q.answer}</span></p>` : ''}
+            <div class="text-sm mt-2 pt-2 border-t border-gray-200">
+                <strong class="text-gray-600">Rationale:</strong> ${q.explanation}
             </div>
-        `;
+        </div>
+    `;
         });
         document.getElementById('reading-feedback-content').innerHTML = readingFeedbackHTML;
 
-        // 3. Generate and Display the Final Holistic Report
+        // --- TESTING MODE for Final Report ---
+        // --- TESTING MODE for Final Report ---
+        const fakeReport = `
+        <div class="accordion-item">
+            <button class="accordion-header">Reading Performance (TEST)</button>
+            <div class="accordion-content"><p>This is a fake analysis of the reading section, displayed for testing purposes.</p></div>
+        </div>
+        <div class="accordion-item">
+            <button class="accordion-header">Actionable Suggestions (TEST)</button>
+            <div class="accordion-content"><p>This is a fake suggestion for improvement, used for testing the accordion layout.</p></div>
+        </div>
+    `;
+        document.getElementById('final-report-content').innerHTML = fakeReport;
+        initializeAccordions(); // Still need to make the fake accordion clickable
+        document.getElementById('final-report-content').innerHTML = fakeReport;
+        initializeAccordions(); // Still need to make the fake accordion clickable
+
+
+        /* --- REAL API CALL (Commented Out) ---
+           To use the real AI again, delete the "TESTING MODE" block above
+           and use Shift + Alt + A to uncomment this block.
+    
         if (finalWritingFeedback) {
             try {
-                // Call the NEW /generate-report endpoint with both reading and writing data
                 const response = await fetch('https://luyenthic2.onrender.com/generate-report', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -272,9 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                 });
                 if (!response.ok) throw new Error('Failed to get final report.');
-
+    
                 const data = await response.json();
-                // Put the final report into its container
                 document.getElementById('final-report-content').innerHTML = data.report;
                 initializeAccordions();
             } catch (error) {
@@ -284,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             document.getElementById('final-report-content').innerHTML = `<p class="text-gray-600">Complete the writing task and get feedback to generate a final report.</p>`;
         }
+        */
     });
 
     restartBtn.addEventListener('click', () => {

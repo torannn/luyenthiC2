@@ -65,32 +65,34 @@ app.post('/generate-report', async (req, res) => {
         return res.status(400).json({ error: 'Reading and Writing data are required.' });
     }
 
+    // Inside app.post('/generate-report', ...)
+
     const prompt = `
-        Act as an expert C2-level English tutor. Your task is to provide a final performance report by synthesizing the user's reading performance and the AI's feedback on their writing.
+    Act as an expert C2-level English tutor. Your task is to provide a final performance report by synthesizing the user's reading performance and the AI's feedback on their writing.
 
-        Your entire response MUST be formatted as a single HTML block. Create three separate collapsible sections using the following structure:
-        
-        <div class="accordion-item">
-            <button class="accordion-header">Section Title</button>
-            <div class="accordion-content" style="display: none;">
-                <p>Your analysis and feedback for this section go here.</p>
-            </div>
+    Your entire response MUST be formatted as a single HTML block. Create three separate collapsible sections using the following structure:
+    
+    <div class="accordion-item">
+        <button class="accordion-header">Section Title</button>
+        <div class="accordion-content">
+            <p>Your analysis and feedback for this section go here.</p>
         </div>
+    </div>
 
-        Create three sections with these exact titles:
-        1. Reading Performance Analysis
-        2. Writing Performance Analysis
-        3. Actionable Suggestions for Improvement
+    Create three sections with these exact titles:
+    1. Reading Performance Analysis
+    2. Writing Performance Analysis
+    3. Actionable Suggestions for Improvement
 
-        For the content:
-        - In "Reading Performance Analysis", analyze the user's reading results.
-        - In "Writing Performance Analysis", summarize the provided writing feedback.
-        - In "Actionable Suggestions", provide 2-3 specific, actionable suggestions based on the combined analysis.
+    For the content:
+    - In "Reading Performance Analysis", analyze the user's reading results.
+    - In "Writing Performance Analysis", summarize the provided writing feedback.
+    - In "Actionable Suggestions", provide 2-3 specific, actionable suggestions based on the combined analysis.
 
-        DATA:
-        - Reading Results: ${JSON.stringify(readingResults)}
-        - Writing Feedback: ${writingFeedback}
-    `;
+    DATA:
+    - Reading Results: ${JSON.stringify(readingResults)}
+    - Writing Feedback: ${writingFeedback}
+`;
 
     // --- NEW RETRY LOGIC STARTS HERE ---
     let attempts = 0;
