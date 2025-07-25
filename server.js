@@ -1,5 +1,7 @@
 const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Groq = require('groq-sdk');
+const OpenAI = require('openai');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
@@ -10,14 +12,64 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
+// Initialize all three AI clients
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// This function contains the logic to try Google -> Groq -> OpenAI
+async function generateWithFallback(prompt) {
+    // --- 1. First, try to use the Google Gemini API ---
+    try {
+        console.log("Attempting with Google Gemini...");
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const result = await model.generateContent(prompt);
+        console.log("Success with Google Gemini.");
+        return result.response.text();
+    } catch (googleError) {
+        // Only fallback on quota errors (429) or overload errors (503)
+        if (googleError.status === 429 || googleError.status === 503) {
+            console.warn(`Google API failed (${googleError.status}). Falling back to Groq...`);
+            
+            // --- 2. Second, try to use the Groq API ---
+            try {
+                console.log("Attempting with Groq...");
+                const chatCompletion = await groq.chat.completions.create({
+                    messages: [{ role: 'user', content: prompt }],
+                    model: 'llama3-8b-8192',
+                });
+                console.log("Success with Groq.");
+                return chatCompletion.choices[0]?.message?.content || "";
+            } catch (groqError) {
+                console.error("Groq API failed. Falling back to OpenAI...", groqError.message);
+
+                // --- 3. Third, try to use the OpenAI API ---
+                try {
+                    console.log("Attempting with OpenAI...");
+                    const chatCompletion = await openai.chat.completions.create({
+                        messages: [{ role: "user", content: prompt }],
+                        model: "gpt-4o-mini",
+                    });
+                    console.log("Success with OpenAI.");
+                    return chatCompletion.choices[0]?.message?.content || "";
+                } catch (openAIError) {
+                    console.error("OpenAI API also failed:", openAIError.message);
+                    throw openAIError; // Give up and throw the final error
+                }
+            }
+        } else {
+            // If it's a different Google error, throw it
+            console.error("An unhandled Google API error occurred:", googleError.message);
+            throw googleError;
+        }
+    }
+}
 
 app.post('/analyze', async (req, res) => {
     try {
         const { essay, taskType } = req.body;
         if (!essay) return res.status(400).json({ error: 'Essay text is required.' });
 
-        // --- NEW, MORE ROBUST PROMPT ---
         const prompt = `
             Analyze the following ${taskType}.
             Your response MUST be formatted as a single HTML block.
@@ -41,94 +93,55 @@ app.post('/analyze', async (req, res) => {
             ---
         `;
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let feedbackText = response.text();
-
-        // Clean the response to ensure it's valid HTML
-        feedbackText = feedbackText.replace(/```html/g, '').replace(/```/g, '').trim();
-
-        res.json({ feedback: feedbackText });
+        const feedbackText = await generateWithFallback(prompt);
+        let cleanedText = feedbackText.replace(/```html/g, '').replace(/```/g, '').trim();
+        res.json({ feedback: cleanedText });
 
     } catch (error) {
-        console.error('Error in AI analysis:', error);
-        res.status(500).json({ error: 'Failed to get feedback from AI.' });
+        res.status(500).json({ error: 'Failed to get feedback from all available AI services.' });
     }
 });
 
-// --- This is the NEW endpoint that replaces /summarize ---
-// --- This is the NEW endpoint that generates an HTML accordion ---
 app.post('/generate-report', async (req, res) => {
-    const { readingResults, writingFeedback } = req.body;
-    if (!readingResults || !writingFeedback) {
-        return res.status(400).json({ error: 'Reading and Writing data are required.' });
-    }
-
-    // Inside app.post('/generate-report', ...)
-
-    const prompt = `
-    Act as an expert C2-level English tutor. Your task is to provide a final performance report by synthesizing the user's reading performance and the AI's feedback on their writing.
-
-    Your entire response MUST be formatted as a single HTML block. Create three separate collapsible sections using the following structure:
-    
-    <div class="accordion-item">
-        <button class="accordion-header">Section Title</button>
-        <div class="accordion-content">
-            <p>Your analysis and feedback for this section go here.</p>
-        </div>
-    </div>
-
-    Create three sections with these exact titles:
-    1. Reading Performance Analysis
-    2. Writing Performance Analysis
-    3. Actionable Suggestions for Improvement
-
-    For the content:
-    - In "Reading Performance Analysis", analyze the user's reading results.
-    - In "Writing Performance Analysis", summarize the provided writing feedback.
-    - In "Actionable Suggestions", provide 2-3 specific, actionable suggestions based on the combined analysis.
-
-    DATA:
-    - Reading Results: ${JSON.stringify(readingResults)}
-    - Writing Feedback: ${writingFeedback}
-`;
-
-    // --- NEW RETRY LOGIC STARTS HERE ---
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    while (attempts < maxAttempts) {
-        try {
-            // This is your original code, now inside the 'try' block
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            let reportText = response.text();
-
-            // Clean the response
-            reportText = reportText.replace(/```html/g, '').replace(/```/g, '').trim();
-
-            // If successful, send the response and exit the function
-            return res.json({ report: reportText });
-
-        } catch (error) {
-            attempts++;
-            console.error(`Attempt ${attempts} failed:`, error.message);
-
-            // Check if it's the specific "overloaded" error and if we have attempts left
-            if (attempts < maxAttempts && error.status === 503) {
-                console.log(`Model is overloaded. Retrying in 1 second...`);
-                // Wait for 1 second before the next attempt
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            } else {
-                // If it's a different error or we're out of retries, fail permanently
-                console.error('Error in report generation:', error);
-                return res.status(500).json({ error: 'Failed to generate report after multiple attempts.' });
-            }
+    try {
+        const { readingResults, writingFeedback } = req.body;
+        if (!readingResults || !writingFeedback) {
+            return res.status(400).json({ error: 'Reading and Writing data are required.' });
         }
+
+        const prompt = `
+            Act as an expert C2-level English tutor. Your task is to provide a final performance report by synthesizing the user's reading performance and the AI's feedback on their writing.
+            Your entire response MUST be formatted as a single HTML block. Create three separate collapsible sections using the following structure:
+            
+            <div class="accordion-item">
+                <button class="accordion-header">Section Title</button>
+                <div class="accordion-content">
+                    <p>Your analysis and feedback for this section go here.</p>
+                </div>
+            </div>
+
+            Create three sections with these exact titles:
+            1. Reading Performance Analysis
+            2. Writing Performance Analysis
+            3. Actionable Suggestions for Improvement
+
+            For the content:
+            - In "Reading Performance Analysis", analyze the user's reading results.
+            - In "Writing Performance Analysis", summarize the provided writing feedback.
+            - In "Actionable Suggestions", provide 2-3 specific, actionable suggestions based on the combined analysis.
+
+            DATA:
+            - Reading Results: ${JSON.stringify(readingResults)}
+            - Writing Feedback: ${writingFeedback}
+        `;
+        
+        const reportText = await generateWithFallback(prompt);
+        let cleanedText = reportText.replace(/```html/g, '').replace(/```/g, '').trim();
+        res.json({ report: cleanedText });
+        
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to generate report from all available AI services.' });
     }
-    // --- RETRY LOGIC ENDS HERE ---
 });
 
 app.listen(port, () => {

@@ -170,24 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Please write your text before requesting feedback.");
             return;
         }
-        aiFeedbackArea.innerHTML = `<p class="text-indigo-600">🤖 Displaying fake data for testing...</p>`;
-
-        // --- TESTING MODE ---
-        // Instead of calling the server, we immediately provide fake feedback.
-        // This saves your API quota while you test the layout.
-        finalWritingFeedback = `
-        <div>
-            <p><strong>Content (TEST):</strong> This is fake feedback to test the layout.</p>
-            <p><strong>Communicative Achievement (TEST):</strong> The accordion and styles are working correctly.</p>
-        </div>
-    `;
-        aiFeedbackArea.innerHTML = finalWritingFeedback;
-
-
-        /* --- REAL API CALL (Currently Disabled) ---
-           To use the real AI again, delete the "TESTING MODE" block above
-           and use Shift + Alt + A to uncomment this block.
-    
+        aiFeedbackArea.innerHTML = `<p class="text-indigo-600">🤖 Analyzing... Please wait.</p>`;
         getFeedbackBtn.disabled = true;
         getFeedbackBtn.textContent = 'Analyzing...';
         try {
@@ -210,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             getFeedbackBtn.disabled = false;
             getFeedbackBtn.textContent = 'Get AI Feedback';
         }
-        */
+       
     });
 
     // --- FINAL VERSION: This function processes all results and generates the final report ---
@@ -267,29 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
         });
         document.getElementById('reading-feedback-content').innerHTML = readingFeedbackHTML;
-
-        // --- TESTING MODE for Final Report ---
-        // --- TESTING MODE for Final Report ---
-        const fakeReport = `
-        <div class="accordion-item">
-            <button class="accordion-header">Reading Performance (TEST)</button>
-            <div class="accordion-content"><p>This is a fake analysis of the reading section, displayed for testing purposes.</p></div>
-        </div>
-        <div class="accordion-item">
-            <button class="accordion-header">Actionable Suggestions (TEST)</button>
-            <div class="accordion-content"><p>This is a fake suggestion for improvement, used for testing the accordion layout.</p></div>
-        </div>
-    `;
-        document.getElementById('final-report-content').innerHTML = fakeReport;
-        initializeAccordions(); // Still need to make the fake accordion clickable
-        document.getElementById('final-report-content').innerHTML = fakeReport;
-        initializeAccordions(); // Still need to make the fake accordion clickable
-
-
-        /* --- REAL API CALL (Commented Out) ---
-           To use the real AI again, delete the "TESTING MODE" block above
-           and use Shift + Alt + A to uncomment this block.
-    
+        
         if (finalWritingFeedback) {
             try {
                 const response = await fetch('https://luyenthic2.onrender.com/generate-report', {
@@ -312,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             document.getElementById('final-report-content').innerHTML = `<p class="text-gray-600">Complete the writing task and get feedback to generate a final report.</p>`;
         }
-        */
+       
     });
 
     restartBtn.addEventListener('click', () => {
