@@ -1,3 +1,5 @@
+const URL = "http://khoakomlem-internal.ddns.net:3000"
+
 document.addEventListener('DOMContentLoaded', () => {
     // Get all the HTML elements
     const startScreen = document.getElementById('start-screen');
@@ -174,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         getFeedbackBtn.disabled = true;
         getFeedbackBtn.textContent = 'Analyzing...';
         try {
-            const response = await fetch('http://khoakomlem-internal.ddns.net/analyze', {
+            const response = await fetch(`${URL}/analyze`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -254,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (finalWritingFeedback) {
             try {
                 debugger
-                const response = await fetch('http://khoakomlem-internal.ddns.net/generate-report', {
+                const response = await fetch(`${URL}/generate-report`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
