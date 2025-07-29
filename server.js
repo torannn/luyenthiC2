@@ -147,3 +147,5 @@ app.post('/generate-report', async (req, res) => {
 app.listen(port, () => {
     console.log(`🚀 Server is running on http://localhost:${port}`);
 });
+
+app.use(express.static(__dirname+"/"))

@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         getFeedbackBtn.disabled = true;
         getFeedbackBtn.textContent = 'Analyzing...';
         try {
-            const response = await fetch('http://localhost:3000/analyze', {
+            const response = await fetch('http://khoakomlem-internal.ddns.net/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -253,7 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (finalWritingFeedback) {
             try {
-                const response = await fetch('http://localhost:3000/generate-report', {
+                debugger
+                const response = await fetch('http://khoakomlem-internal.ddns.net/generate-report', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
