@@ -1,4 +1,5 @@
-const URL = "http://khoakomlem-internal.ddns.net:3000"
+// const URL = "http://khoakomlem-internal.ddns.net:3000"
+const URL = ""
 
 document.addEventListener('DOMContentLoaded', () => {
     // Get all the HTML elements
